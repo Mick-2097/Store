@@ -1,11 +1,7 @@
 <script>
-
+import { defineProps } from "vue"
 export default {
-    name: 'Footer',
-    setup() {
-        
-        return {  }
-    }
+    name: 'Footer'
 }
 </script>
 

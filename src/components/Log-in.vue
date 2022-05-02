@@ -31,8 +31,10 @@ export default {
                 image: '/src/assets/smile.png'
             }
         ]
+        const showPassword = ref(false)
+
         const user = ref()
-        let productsArray = []
+        const productsArray = ref([])
         const isLogInForm = ref(true)
         const isSignUpForm = ref(false)
         const isLoggedIn = ref(false)
@@ -42,9 +44,8 @@ export default {
         const welcome = ref()
         const isProductPage = ref(false)
         const isHomePage = ref(false)
-        const showButton = ref()
-        const username = ref()
-        const password = ref()
+        const username = ref('')
+        const password = ref('')
         const list = ref()
         const preview = ref(false)
         const previewTitle = ref()
@@ -59,24 +60,18 @@ export default {
         const cartTotal = ref(0)
         const modal = ref()
         const imageInput = ref()
-        const getProducts = () => {
-            fetch('https://fakestoreapi.com/products')
-            .then(res => res.json())
-            .then(data => {
-                data.forEach(x => productsArray.push(x))
-                console.log('data recieved')
-                })
-        }
-        getProducts()
+        
+        fetch('https://fakestoreapi.com/products')
+        .then(res => res.json())
+        .then(data => {
+            productsArray.value = data
+            console.log('recieved data')
+        })
+    
         // SHOW PASSWORD
         const showHide = () => {
-            if (showButton.value.innerText === 'SHOW') {
-                showButton.value.innerText = 'HIDE'
-                password.value.type = 'text'
-            } else {
-                showButton.value.innerText = 'SHOW'
-                password.value.type = 'password'
-            }
+            showPassword.value = !showPassword.value 
+            console.log(showPassword)
         }
         // TOGGLE LOG IN SIGN UP
         const signUpLogIn = () => {
@@ -95,18 +90,18 @@ export default {
             }
         }
         // LOG IN ATTEMPT
-        const loginAttempt = () => {
+        const loginAttempt = () => { 
             for (let i = 0; i < users.length; i++) {
-                if (username.value.value === users[i].name && password.value.value === users[i].password) {
+                if (username.value === users[i].name && password.value === users[i].password) {
                     title.value = ''
                     user.value = users[i]
+                    
                     isLogInForm.value = false
                     setTimeout(() => {
                         isWelcome.value = true
                     }, 200);
                     setTimeout(() => {
                         welcome.value.classList.add('opacity1')
-                        loadProducts()
                     }, 300)
                     setTimeout(() => welcome.value.classList.remove('opacity1'), 2700)
                     setTimeout(() => {
@@ -115,6 +110,7 @@ export default {
                         isLoggedIn.value = true
                         isProductPage.value = true
                     }, 3000)
+                    break
                 }
             }
         }
@@ -122,42 +118,22 @@ export default {
         const showDetails = (event) => {
             if (event.target.classList.contains('details-link')) {
                 isFarFromHome.value = false
-                let x = event.target.id
-                purchaseItem.value = productsArray[x]
+                let x = event.target.id - 1
+                purchaseItem.value = productsArray.value[x]
                 preview.value = true
-                previewTitle.value = productsArray[x].title
-                previewImage.value = productsArray[x].image
-                previewDesc.value = productsArray[x].description
-                previewPrice.value = productsArray[x].price
+                previewTitle.value = productsArray.value[x].title
+                previewImage.value = productsArray.value[x].image
+                previewDesc.value = productsArray.value[x].description
+                previewPrice.value = productsArray.value[x].price
                 setTimeout(() => {
                     modal.value.focus()
-                }, 500);
+                })
             }
         }
         const closeModal = () => {
             preview.value = false
         }
-        // POPULATE PRODUCT PAGE
-        const loadProducts = () => {
-            productsArray.forEach(x => {
-                list.value.innerHTML += 
-                `<li>
-                    <p class="product-title">
-                        ${x.title.slice(0, 40)}...
-                    </p>
-                    <div class="spacer">
-                        <img src="${x.image}" class="product-image" alt="#"/>
-                    </div>
-                    <a class="details-link" id="${x.id - 1}">
-                        Details...
-                    </a>
-                    <p class="product-price">
-                        $ ${x.price.toFixed(2)}
-                    </p>
-                </li>`
-            })
-            console.log('list populated')
-        }
+ 
         // NAV BUTTONS
         const homeButton = () => {
             title.value = 'Home'
@@ -166,6 +142,7 @@ export default {
             setTimeout(() => {
                 isHomePage.value = true
             }, 200);
+            console.log()
         }
         const productsButton = () => {
             title.value = 'Products'
@@ -211,7 +188,7 @@ export default {
                 purchase.value = false
             }, 1000);
         }
-        // DELETE ITEM FROM CART
+        // CLICK CART ITEM
         const clickCartItem = (event) => {
             if (event.target.classList.contains('delete-item')) {
                 cartTotal.value -= cartArray[event.target.id].price
@@ -243,7 +220,7 @@ export default {
             }
         }
         window.onscroll = function() {topButton()}
-        let scrollToTop = () => {
+        const scrollToTop = () => {
             document.body.scrollTop = 0
             document.documentElement.scrollTop = 0
         }
@@ -271,6 +248,8 @@ export default {
             }, 3000)
         }
         return { 
+            showPassword,
+            productsArray,
             isLoggedIn,
             isCart,
             welcome,
@@ -282,20 +261,17 @@ export default {
             title,
             isLogInForm, 
             isSignUpForm, 
-            showButton, 
             username,
-            password, 
+            password,
             users,
             user,
             imageInput,
-            loadProducts,
             homeButton,
             productsButton,
             cartButton,
             showHide,
             signUpLogIn,
             loginAttempt,
-            getProducts, 
             showDetails,
             addToCart,
             topButton,
@@ -339,12 +315,14 @@ export default {
 <form v-if="isLogInForm" ref="logInForm" class="login-form" action="#" method="#">
 
     <label for="username" class="user-label">Username</label>
-    <input ref="username" type="text" class="user-input" id="username" placeholder="username" maxlength="16">
+    <input v-model="username" class="user-input" id="username" placeholder="username" maxlength="16">
 
     <label for="password">Password</label>
-    <input ref="password" type="password" class="password-input" id="password" placeholder="password" maxlength="16">
+    <input v-model="password" :type="showPassword ? 'text' : 'password'" class="password-input" id="password" placeholder="password" maxlength="16">
 
-    <label ref="showButton" @click="showHide" class="show-hide" for="checkbox">SHOW</label>
+    <label @click="showHide" class="show-hide" for="checkbox">
+        {{showPassword ? 'HIDE' : 'SHOW'}}
+    </label>
     <input type="checkbox" class="checkbox" name="show-hide" id="checkbox">
 
     <button @click.prevent="loginAttempt" class="login-button">Log in</button>
@@ -421,6 +399,20 @@ export default {
 <!-- PRODUCTS LIST -->
 <transition name="fade">
 <ul @click="showDetails" v-show="isProductPage" ref="list" class="product-list">
+    <li v-for="product in productsArray">
+        <p class="product-title">
+            {{product.title.slice(0, 40)}}...
+        </p>
+        <div class="spacer">
+            <img :src="product.image" class="product-image" alt="#"/>
+        </div>
+        <a class="details-link" :id="product.id">
+            Details...
+        </a>
+        <p class="product-price">
+            $ {{product.price.toFixed(2)}}
+        </p>
+    </li>
 </ul>
 </transition>
 
@@ -464,6 +456,10 @@ export default {
 /* TO DO */
 
  /* 
+    1) Products and cart should use v-for
+    2) Use array.find(id) to find elements in an array
+    3) Split the functionality to different component. Log-in should go to a separate component.
+    4) Read about vue props
     cart transitions 
     home page content 
 */
