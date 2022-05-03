@@ -67,7 +67,7 @@ body {
 }
 nav h2 {
   text-align: center;
-  color: var(--Accent);
+  color: whitesmoke;
   align-self: flex-end;
   margin-bottom: 4px;
   width: 237px;
@@ -712,13 +712,4 @@ footer p {
     right: 10px;
     bottom: 120px;
   }
-}
-
-/*  JS  */
-
-.opacity0 {
-  opacity: 0;
-}
-.opacity1 {
-  opacity: 1;
 }
