@@ -1,5 +1,4 @@
 <script>
-import { isSimpleIdentifier } from "@vue/compiler-core"
 import { ref } from "vue"
 
 export default {
@@ -32,7 +31,7 @@ export default {
             }
         ]
         const showPassword = ref(false)
-
+        const previewObject = ref()
         const user = ref()
         const productsArray = ref([])
         const isLogInForm = ref(true)
@@ -48,15 +47,10 @@ export default {
         const password = ref('')
         const list = ref()
         const preview = ref(false)
-        const previewTitle = ref()
-        const previewImage = ref()
-        const previewDesc = ref()
-        const previewPrice = ref()
+        let recentArray = []
         const title = ref('log in')
         const purchase = ref(false)
         let cartArray = []
-        const purchaseItem = ref()
-        const cartList = ref()
         const cartTotal = ref(0)
         const modal = ref()
         const imageInput = ref()
@@ -65,14 +59,8 @@ export default {
         .then(res => res.json())
         .then(data => {
             productsArray.value = data
-            console.log('recieved data')
+            console.log('data recieved')
         })
-    
-        // SHOW PASSWORD
-        const showHide = () => {
-            showPassword.value = !showPassword.value 
-            console.log(showPassword)
-        }
         // TOGGLE LOG IN SIGN UP
         const signUpLogIn = () => {
             if (isLogInForm.value) {
@@ -95,17 +83,12 @@ export default {
                 if (username.value === users[i].name && password.value === users[i].password) {
                     title.value = ''
                     user.value = users[i]
-                    
                     isLogInForm.value = false
                     setTimeout(() => {
                         isWelcome.value = true
-                    }, 200);
+                    }, 400);
+                    setTimeout(() => isWelcome.value = false, 2700)
                     setTimeout(() => {
-                        welcome.value.classList.add('opacity1')
-                    }, 300)
-                    setTimeout(() => welcome.value.classList.remove('opacity1'), 2700)
-                    setTimeout(() => {
-                        isWelcome.value = false
                         title.value = 'Products'
                         isLoggedIn.value = true
                         isProductPage.value = true
@@ -114,26 +97,47 @@ export default {
                 }
             }
         }
-        // PRODUCT MODAL
+        // CREATE ACCOUNT
+        const createAccount = () => {
+            title.value = ''
+            user.value = users[2]
+            isSignUpForm.value = false
+            scrollToTop()
+            setTimeout(() => {
+                isWelcome.value = true
+            }, 300);
+            setTimeout(() => {
+                isWelcome.value = false
+                title.value = 'Products'
+                isLoggedIn.value = true
+                isProductPage.value = true
+            }, 3000)
+        }
+
+        // SHOW DETAILS
         const showDetails = (event) => {
             if (event.target.classList.contains('details-link')) {
                 isFarFromHome.value = false
-                let x = event.target.id - 1
-                purchaseItem.value = productsArray.value[x]
+                previewObject.value = productsArray.value[+event.target.id.substring(8)]
+                recentArray.push(previewObject.value)
+                if (recentArray.length > 7) recentArray.splice(0, 1)
                 preview.value = true
-                previewTitle.value = productsArray.value[x].title
-                previewImage.value = productsArray.value[x].image
-                previewDesc.value = productsArray.value[x].description
-                previewPrice.value = productsArray.value[x].price
                 setTimeout(() => {
                     modal.value.focus()
+                }, 1)
+            }
+            if (event.target.classList.contains('recent-image')) {
+                productsArray.value.find(x => {
+                    if (x.id === +event.target.id) {
+                        previewObject.value = x
+                        preview.value = true
+                        setTimeout(() => {
+                        modal.value.focus()
+                        }, 1)
+                    }
                 })
             }
         }
-        const closeModal = () => {
-            preview.value = false
-        }
- 
         // NAV BUTTONS
         const homeButton = () => {
             title.value = 'Home'
@@ -141,7 +145,7 @@ export default {
             isCart.value = false
             setTimeout(() => {
                 isHomePage.value = true
-            }, 200);
+            }, 300);
             console.log()
         }
         const productsButton = () => {
@@ -150,7 +154,7 @@ export default {
             isCart.value = false
             setTimeout(() => {
                 isProductPage.value = true
-            }, 200);
+            }, 300);
         }
         const cartButton = () => {
             title.value = 'Cart'
@@ -158,31 +162,12 @@ export default {
             isProductPage.value = false
             setTimeout(() => {
                 isCart.value = true
-            }, 200);
-        }
-        // POPULATE CART PAGE
-        const fillCart = () => {
-            cartArray.forEach((x, index) => {
-                cartList.value.innerHTML += 
-                `<li>
-                    <div class="cart-spacer">
-                        <img class="delete-item" id="${index}" src="/src/assets/close-icon.png" alt="">
-                        <div class="cart-image-spacer">
-                            <img class="item-image" id="${index}" src="${x.image}" alt="">
-                        </div>
-                        <p>${x.title.slice(0, 16)}</p>
-                    </div>
-                </li>`
-            })
+            }, 300);
         }
         // ADD ITEM TO CART
         const addToCart = () => {
-            cartArray.push(purchaseItem.value)
-            console.log(purchaseItem.value.price)
-            cartTotal.value += purchaseItem.value.price
-            console.log(cartTotal.value)
-            cartList.value.innerHTML = ``    
-            fillCart()
+            cartArray.push(previewObject.value)
+            cartTotal.value += +previewObject.value.price.toFixed(2)
             purchase.value = true
             setTimeout(() => {
                 purchase.value = false
@@ -191,23 +176,16 @@ export default {
         // CLICK CART ITEM
         const clickCartItem = (event) => {
             if (event.target.classList.contains('delete-item')) {
-                cartTotal.value -= cartArray[event.target.id].price
-                cartArray.splice(event.target.id, 1)
-                cartList.value.innerHTML = ``    
-                fillCart()
-                console.log(cartTotal.value)
+                cartTotal.value -= cartArray[+event.target.id.substring(5)].price
+                cartArray.splice(+event.target.id.substring(5), 1)
             }
             if (event.target.classList.contains('item-image')) {
                 isFarFromHome.value = false
-                let x = event.target.id
+                previewObject.value = cartArray[+event.target.id.substring(5)]
                 preview.value = true
-                previewTitle.value = productsArray[x].title
-                previewImage.value = productsArray[x].image
-                previewDesc.value = productsArray[x].description
-                previewPrice.value = productsArray[x].price
                 setTimeout(() => {
                     modal.value.focus()
-                }, 500);
+                }, 1)
             }
         }
         // SCROLL TO TOP BUTTON
@@ -226,29 +204,11 @@ export default {
         }
         // A FUNCTION FOR TESTING LOGIC
         const test = (event) => {
-            console.log(imageInput.value)
-            title.value = ''
-            user.value = users[2]
-            isSignUpForm.value = false
-            document.body.scrollTop = 0
-            document.documentElement.scrollTop = 0
-            setTimeout(() => {
-                isWelcome.value = true
-            }, 200);
-            setTimeout(() => {
-                welcome.value.classList.add('opacity1')
-                loadProducts()
-            }, 300)
-            setTimeout(() => welcome.value.classList.remove('opacity1'), 2700)
-            setTimeout(() => {
-                isWelcome.value = false
-                title.value = 'Products'
-                isLoggedIn.value = true
-                isProductPage.value = true
-            }, 3000)
+           
         }
         return { 
             showPassword,
+            previewObject,
             productsArray,
             isLoggedIn,
             isCart,
@@ -257,7 +217,6 @@ export default {
             isHomePage,
             isWelcome,
             isFarFromHome,
-            isCart,
             title,
             isLogInForm, 
             isSignUpForm, 
@@ -266,10 +225,10 @@ export default {
             users,
             user,
             imageInput,
+            createAccount,
             homeButton,
             productsButton,
             cartButton,
-            showHide,
             signUpLogIn,
             loginAttempt,
             showDetails,
@@ -278,18 +237,12 @@ export default {
             scrollToTop,
             test,
             clickCartItem,
-            closeModal,
             productsArray,
             list,
             preview,
-            previewTitle,
-            previewImage,
-            previewDesc,
-            previewPrice,
+            recentArray,
             purchase,
             cartArray,
-            purchaseItem,
-            cartList,
             cartTotal,
             modal
         }
@@ -320,7 +273,7 @@ export default {
     <label for="password">Password</label>
     <input v-model="password" :type="showPassword ? 'text' : 'password'" class="password-input" id="password" placeholder="password" maxlength="16">
 
-    <label @click="showHide" class="show-hide" for="checkbox">
+    <label @click="showPassword = !showPassword" class="show-hide" for="checkbox">
         {{showPassword ? 'HIDE' : 'SHOW'}}
     </label>
     <input type="checkbox" class="checkbox" name="show-hide" id="checkbox">
@@ -356,7 +309,7 @@ export default {
     <label for="image-input">Profile picture</label>
     <input ref="imageInput" id="image-input" class="image-input" type="file" accept="image/*">
 
-    <button @click.prevent="test" class="signup-button">Create account</button>
+    <button @click.prevent="createAccount" class="signup-button">Create account</button>
 
     <div class="log-in" id="">
         <h3>Already a member?</h3>
@@ -366,20 +319,36 @@ export default {
 </transition>
 
 <!-- WELCOME MESSAGE -->
-<header v-if="isWelcome" ref="welcome" class="welcome">Welcome {{user.name}}!</header>
+<transition name="fade">
+<header v-if="isWelcome" class="welcome">Welcome {{user.name}}!</header>
+</transition>
 
 <!-- HOME PAGE -->
 <transition name="fade">
-<div v-if="isLoggedIn" v-show="isHomePage" class="profile-card">
-    <div class="row">
-        <img class="profile-picture" :src="user.image" alt="">
-        <div class="box">
-            <p class="name">{{user.name}}</p>
-            <p class="email">{{user.email}}</p>
+<div v-if="isLoggedIn" v-show="isHomePage" class="home-page">
+    <div class="profile-card">
+        <div class="row">
+            <img class="profile-picture" :src="user.image" alt="">
+            <div class="box">
+                <p class="name">{{user.name}}</p>
+                <p class="email">{{user.email}}</p>
+            </div>
         </div>
+        <p class="address-label">Shipping Address</p>
+        <p class="address">{{user.shippingAddress}}</p>
     </div>
-    <p class="address-label">Shipping Address</p>
-    <p class="address">{{user.shippingAddress}}</p>
+    <div class="content-card">
+        <h1>Content section</h1>
+        <p>Maybe account info or something</p>
+    </div>
+    <div class="recent-card">
+        <h1>Recently viewed</h1>
+        <ul class="recent-list">
+            <li v-for="item in recentArray" class="recent-item">
+                <img @click="showDetails" :src="item.image" alt="" :id="item.id" class="recent-image">
+            </li>
+        </ul>
+    </div>
 </div>
 </transition>
 
@@ -392,7 +361,18 @@ export default {
         Total ${{cartTotal.toFixed(2)}}
         <button class="checkout">Checkout</button>
     </p>
-    <ul @click="clickCartItem" ref="cartList" class="cart-list"></ul>
+    <transition-group tag="ul" name="cart" @click="clickCartItem" class="cart-list" appear mode="out-in">
+        <li v-for="item in cartArray" :key="item.id" :data-index="item.id">
+            <div class="cart-image-spacer">
+                <img class="item-image" :src="item.image" alt="" :id="'item-' + cartArray.indexOf(item)">
+            </div>
+            <div class="cart-spacer">
+                <p>{{item.title.slice(0, 16)}}</p>
+                <p class="cart-price">$ {{item.price.toFixed(2)}}</p>
+            </div>
+            <img class="delete-item" src="/src/assets/close-icon.png" alt="close button" :id="'item-' + cartArray.indexOf(item)">
+        </li>
+    </transition-group>
 </div>
 </transition>
 
@@ -406,7 +386,7 @@ export default {
         <div class="spacer">
             <img :src="product.image" class="product-image" alt="#"/>
         </div>
-        <a class="details-link" :id="product.id">
+        <a class="details-link" :id="'product-' + (product.id - 1)">
             Details...
         </a>
         <p class="product-price">
@@ -416,19 +396,19 @@ export default {
 </ul>
 </transition>
 
-<!-- PRODUCT MODAL -->
+<!-- MODAL -->
 <transition name="fade">
 <div v-if="preview" class="overlay">
-    <div @keydown.esc="closeModal" class="modal" ref="modal" tabindex="0">
+    <div @keydown.esc="preview = false" class="modal" ref="modal" tabindex="0">
         <img @click="preview = false" class="close" src="/src/assets/close-icon.png" alt=""/>
-        <h1>{{previewTitle}}</h1>
+        <h1>{{previewObject.title}}</h1>
         <div class="previewSpacer">
-            <img class="preview-image" :src="previewImage" alt=""/>
+            <img class="preview-image" :src="previewObject.image" alt=""/>
         </div>
-        <p>{{previewDesc}}</p>
+        <p>{{previewObject.description}}</p>
         <div class="divider">
-            <h2 :class="{ 'preview-price': purchase }">$ {{previewPrice.toFixed(2)}}</h2>
-            <img v-show="isProductPage" @click="addToCart" class="cart-button" src="/src/assets/cart.png" alt=""/>
+            <h2 :class="{ 'preview-price': purchase }">$ {{previewObject.price.toFixed(2)}}</h2>
+            <img v-show="isProductPage || isHomePage" @click="addToCart" class="cart-button" src="/src/assets/cart.png" alt=""/>
         </div>
     </div>
 </div>
@@ -447,21 +427,34 @@ export default {
     opacity: 0;
 }
 .fade-enter-active {
-    transition: opacity 350ms ease-out;
+    transition: opacity 300ms ease-in;
 }
 .fade-leave-active {
-    transition: opacity 150ms ease-in;
+    transition: opacity 300ms ease-out;
 }
-
+.cart-enter-from,
+.cart-leave-to {
+    transform: scale(1, 0);
+}
+.cart-enter-to,
+.cart-leave-from {
+    transform: scale(1, 1);
+}
+.cart-move,
+.cart-leave-active,
+.cart-enter-active {
+    transition: transform 400ms linear;
+}
+.cart-leave-active {
+    position: absolute;
+}
 /* TO DO */
-
  /* 
-    1) Products and cart should use v-for
-    2) Use array.find(id) to find elements in an array
-    3) Split the functionality to different component. Log-in should go to a separate component.
+    RECENTLY VIEWED click events
+    1) Products and cart should use v-for                       Done
+    2) Use array.find(id) to find elements in an array          Done
+    3) Split the functionality to different component. 
+    Log-in should go to a separate component.
     4) Read about vue props
-    cart transitions 
-    home page content 
 */
-
 </style>
